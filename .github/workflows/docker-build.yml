@@ -272,6 +272,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      ## ECR
+      - if: ${{ contains(inputs.image_registry, 'ecr') }}
+        name: "Configure AWS credentials (ECR)"
+        uses: RDXWorks-actions/configure-aws-credentials@main
+        with:
+          role-to-assume: ${{ secrets.role_to_assume }}
+          aws-region: eu-west-2
+      - if: ${{ contains(inputs.image_registry, 'ecr') }}
+        name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
       # Setting up Build environment
       - if: inputs.disable_qemu == true
         name: Set up QEMU 
@@ -290,7 +301,7 @@ jobs:
         uses: RDXWorks-actions/metadata-action@master
         with:
           images: |
-            ${{ inputs.image_registry }}/${{ inputs.image_organization }}/${{ inputs.image_name }}
+            ${{ inputs.image_organization != '' && format('{0}/{1}/{2}', inputs.image_registry, inputs.image_organization, inputs.image_name) || format('{0}/{1}', inputs.image_registry, inputs.image_name) }}
           tags: |
             type=raw,value=${{ inputs.tag }},enable=${{ inputs.tag != '' }}
             ${{ inputs.tags }}
