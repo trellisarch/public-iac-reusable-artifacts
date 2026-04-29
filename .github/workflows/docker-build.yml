@@ -282,11 +282,15 @@ jobs:
 
       ## ECR
       - if: ${{ contains(inputs.image_registry, 'ecr') }}
+        name: Extract ECR region
+        id: ecr_region
+        run: echo "region=$(echo '${{ inputs.image_registry }}' | sed 's/.*\.ecr\.\(.*\)\.amazonaws\.com/\1/')" >> $GITHUB_OUTPUT
+      - if: ${{ contains(inputs.image_registry, 'ecr') }}
         name: "Configure AWS credentials (ECR)"
         uses: RDXWorks-actions/configure-aws-credentials@main
         with:
           role-to-assume: ${{ secrets.role_to_assume }}
-          aws-region: eu-west-2
+          aws-region: ${{ steps.ecr_region.outputs.region }}
       - if: ${{ contains(inputs.image_registry, 'ecr') }}
         name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
