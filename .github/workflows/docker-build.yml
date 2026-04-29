@@ -165,6 +165,11 @@ on:
         required: false
         type: string
         default: ''
+      secrets_account_id:
+        description: 'AWS account ID for reading DockerHub credentials from Secrets Manager'
+        required: false
+        type: string
+        default: '308190735829'
     outputs:
       default_tag:
         description: "The default_tag from metadata-action"
@@ -222,20 +227,23 @@ jobs:
       ## Private Repo credentials
       # This is version v2.2.0
       # https://github.com/aws-actions/configure-aws-credentials/releases/tag/v2.2.0
-      - name: "Configure AWS credentials (Private)"
+      - if: ${{ !contains(inputs.image_registry, 'ecr') }}
+        name: "Configure AWS credentials (Private)"
         uses: RDXWorks-actions/configure-aws-credentials@main
         with:
-          role-to-assume: arn:aws:iam::308190735829:role/gh-common-secrets-read-access
+          role-to-assume: arn:aws:iam::${{ inputs.secrets_account_id }}:role/gh-common-secrets-read-access
           aws-region: eu-west-2
       # This is version v1.0.4
       # https://github.com/aws-actions/configure-aws-credentials/releases/tag/v1.0.4
-      - name: Read secrets from AWS Secrets Manager into environment variables (Private)
+      - if: ${{ !contains(inputs.image_registry, 'ecr') }}
+        name: Read secrets from AWS Secrets Manager into environment variables (Private)
         uses: RDXWorks-actions/aws-secretsmanager-get-secrets@main
         with:
           secret-ids: |
             DOCKERHUB_PRIVATE, github-actions/common/dockerhub-credentials
           parse-json-secrets: true
-      - name: Login to Docker Hub (Private)
+      - if: ${{ !contains(inputs.image_registry, 'ecr') }}
+        name: Login to Docker Hub (Private)
         uses: RDXWorks-actions/login-action@master
         with:
           username: ${{env.DOCKERHUB_PRIVATE_USERNAME}}
